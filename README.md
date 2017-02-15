@@ -1,2 +1,0 @@
-# microservice
-Camel Proxy Services
