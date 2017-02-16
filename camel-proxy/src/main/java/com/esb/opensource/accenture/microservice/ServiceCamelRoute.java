@@ -22,6 +22,8 @@ public class ServiceCamelRoute extends RouteBuilder {
 	String port;
 	@Value("${rest.target.url}")
 	String EMPLYEE_SERVICE;
+	@Value("${rest.post.url}")
+	String EMPLYEE_TIME;
 
 	@Override
 	public void configure() throws Exception {
@@ -31,7 +33,7 @@ public class ServiceCamelRoute extends RouteBuilder {
 		restConfiguration().component("jetty").host(host).port(port)
 				.bindingMode(RestBindingMode.json);
 
-		rest("/employee").get("/{id}").outType(EmployeeDetails.class)
+		rest("/employee").post("/{id}")//.outType(EmployeeDetails.class)
 				.to("direct:getDetail");
 
 		from("direct:getDetail").process(new Processor() {
@@ -57,16 +59,19 @@ public class ServiceCamelRoute extends RouteBuilder {
 						exchange -> {
 							String jsonResponse = exchange.getIn().getBody(
 									String.class);
-							ObjectMapper objectMapper = new ObjectMapper();
+							//ObjectMapper objectMapper = new ObjectMapper();
 							/*
 							 * objectMapper.configure(SerializationFeature.
 							 * FAIL_ON_EMPTY_BEANS, false);
 							 * objectMapper.configure(Feature.AUTO_CLOSE_SOURCE,
 							 * true);
 							 */
-							EmployeeDetails emp = objectMapper.readValue(
-									jsonResponse, EmployeeDetails.class);
-							exchange.getIn().setBody(emp);
-						});
+							/*EmployeeDetails emp = objectMapper.readValue(
+									jsonResponse, EmployeeDetails.class);*/
+							exchange.getOut().setHeader(Exchange.CONTENT_TYPE, "application/json");
+							exchange.getOut().setBody(jsonResponse);
+						})
+				.setHeader(Exchange.HTTP_METHOD, constant("POST"))
+				.to(EMPLYEE_TIME+"?bridgeEndpoint=true").transform().constant("Status:Success");			
 	}
 }
